@@ -87,23 +87,30 @@ def comprarConColleccion(curso, imageFile):
         y2 = int(boundingBox['Top'] * image_height + boundingBox['Height'] * image_height) * 1.1
 
         croppredImage = image.crop((x1,y1,x2,y2))
+        w = croppredImage.size[0]
+        h = croppredImage.size[1]
 
-        # Pasa este imagen temporal a un blob...
-        stream = io.BytesIO()
-        croppredImage.save(stream, format = 'JPEG')
-        binary = stream.getvalue()
+        if w >= 80 and h >= 80:
+            # Pasa este imagen temporal a un blob...
+            stream = io.BytesIO()
+            croppredImage.save(stream, format = 'JPEG')
+            binary = stream.getvalue()
 
-        # Para luego pasar este imagen singular por Search Faces by Image
-        response = rekognition.search_faces_by_image(
-            CollectionId = curso,
-            Image = {'Bytes': binary},
-            FaceMatchThreshold=70 # minimo nivel de aceptacion
-        )
-        if len(response['FaceMatches']) == 0:
-            print('Alumno no del Curso Detectado')
+            # Para luego pasar este imagen singular por Search Faces by Image
+            response = rekognition.search_faces_by_image(
+                CollectionId = curso,
+                Image = {'Bytes': binary},
+                FaceMatchThreshold=70 # minimo nivel de aceptacion
+            )
+            if len(response['FaceMatches']) == 0:
+                print('Alumno no del Curso Detectado')
+            else:
+                # Agrega FaceId y Similarity del sujeto encontrado al diccionario
+                allFaceIds[response['FaceMatches'][0]['Face']['FaceId']] = response['FaceMatches'][0]['Similarity']
         else:
-            # Agrega FaceId y Similarity del sujeto encontrado al diccionario
-            allFaceIds[response['FaceMatches'][0]['Face']['FaceId']] = response['FaceMatches'][0]['Similarity']
+            print('Foto de la persona es muy chica, descartando...')
+    
+    return allFaceIds # Entrega diccionario de caras con su similitud
     
     return allFaceIds # Entrega diccionario de caras con su similitud
 
