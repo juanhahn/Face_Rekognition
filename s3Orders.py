@@ -1,4 +1,6 @@
 import boto3
+import io
+from PIL import Image
 s3 = boto3.client('s3')
 
 def getAllAlumnos(bucket):
@@ -19,3 +21,22 @@ def conseguirNombre(tableName, key):
         Key = key
     )
     return response['Metadata']['fullname']
+
+def agregarAlumnoS3(bucket, imagenEntrada):
+    imagen = Image.open(imagenEntrada)
+    stream = io.BytesIO()
+    imagen.save(stream, format = 'JPEG')
+    imagenCodificado = stream.getvalue()
+
+    nombreCompleto = imagenEntrada[17:-4].replace('_',' ').title()
+    print(nombreCompleto)
+
+    s3.put_object(
+        Body = imagenCodificado,
+        Bucket = bucket,
+        ContentType = 'image/jpeg',
+        Key = imagenEntrada[10:],
+        Metadata={
+        'fullname': nombreCompleto
+        }
+    )
